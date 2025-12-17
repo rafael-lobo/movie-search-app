@@ -2,7 +2,6 @@ require 'uri'
 require 'net/http'
 
 class TmdbService
-
     def initialize
         @api_key = ENV["TMDB_API_KEY"]
         raise "API key not found" if @api_key.blank?
@@ -30,6 +29,20 @@ class TmdbService
         request["accept"] = 'application/json'
 
         response = http.request(request)
-        JSON.parse(response.read_body.force_encoding('UTF-8'))
+        parsed_response = JSON.parse(response.read_body.force_encoding('UTF-8'))
+        parse_results(parsed_response["results"])
+    end
+
+    def parse_results(results)
+        results.map do |movie|
+        {
+            :tmdb_id => movie["id"],
+            :title => movie["original_title"],
+            :overview => movie["overview"],
+            :popularity => movie["popularity"],
+            :poster_path => movie["poster_path"],
+            :release_date => movie["release_date"],
+        }
+        end
     end
 end
