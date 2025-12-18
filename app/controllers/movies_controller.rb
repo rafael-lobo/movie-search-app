@@ -1,59 +1,42 @@
 class MoviesController < ApplicationController
-    def search
-        start_date = Date.parse(params[:start_date]) rescue nil
-        end_date = Date.parse(params[:end_date]) rescue nil
+  before_action :validate_dates, only: [:search]
 
-        return unless start_date && end_date
+  def search
+    fill_missing_date_ranges(@start_date, @end_date)
+    
+    movies = Movie.where(release_date: @start_date..@end_date).order(popularity: :desc).limit(20)
 
-        cached_movies = Movie.cached_search(start_date, end_date)
+    render json: {
+        movies: movies.as_json(methods: :poster_url),
+        count: movies.size,
+        total_available: Movie.count(:all)
+    }
+  end
 
-        return fetch_and_cache_movies(start_date, end_date) if !cached_movies.any?
+  private
 
-        cached_dates = cached_movies.pluck(:release_date).uniq.to_a
-        earliest_release_date = cached_dates[0]
-        latest_release_date = cached_dates[-1]
+  def validate_dates
+    @start_date = Date.parse(params[:start_date])
+    @end_date = Date.parse(params[:end_date])
+  rescue ArgumentError, TypeError
+    render json: { error: 'Invalid date format' }, status: :bad_request
+  end
 
-        if start_date < earliest_release_date
-            fetch_and_cache_movies(start_date, earliest_release_date)
-        end
+  def fill_missing_date_ranges(start_date, end_date)
+    earliest = Movie.minimum(:release_date)
+    latest = Movie.maximum(:release_date)
 
-        if end_date > latest_release_date
-            fetch_and_cache_movies(latest_release_date, end_date)
-        end
+    return fetch_movies(start_date, end_date) if Movie.none?
 
-        cached_movies.sort_by(&:popularity)
-        render_movies(cached_movies.first(20))
-    end
+    fetch_movies(start_date, earliest - 1.day) if start_date < earliest
+    fetch_movies(latest + 1.day, end_date) if end_date > latest
+  end
 
-    private
+  def fetch_movies(start_date, end_date)
+    return if start_date > end_date
 
-    def fetch_and_cache_movies(start_date, end_date)
-        service = TmdbService.new
-        movies_data = service.search_by_date_range(start_date, end_date)
-
-        movies = movies_data.map do |movie_data|
-            Movie.save_from_data(movie_data)
-        end
-
-        render_movies(movies)
-    end
-
-     def render_movies(movies)
-        render json: {
-            movies: movies.map { |m| format_movie(m) },
-            count: movies.size,
-        }
-    end
-
-    def format_movie(movie)
-        {
-            id: movie.id,
-            tmdb_id: movie.tmdb_id,
-            title: movie.title,
-            release_date: movie.release_date,
-            overview: movie.overview,
-            poster_url: movie.poster_url,
-            popularity: movie.popularity
-        }
-    end
+    service = TmdbService.new
+    movies_data = service.search_by_date_range(start_date, end_date)
+    movies_data.each { |data| Movie.save_from_data(data) }
+  end
 end
