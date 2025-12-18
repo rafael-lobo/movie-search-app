@@ -21,7 +21,8 @@ class MoviesController < ApplicationController
             fetch_and_cache_movies(latest_release_date, end_date)
         end
 
-        cached_movies.sort_by(&:popularity).first(20)
+        cached_movies.sort_by(&:popularity)
+        render_movies(cached_movies.first(20))
     end
 
     private
@@ -30,8 +31,29 @@ class MoviesController < ApplicationController
         service = TmdbService.new
         movies_data = service.search_by_date_range(start_date, end_date)
 
-        movies_data.map do |movie_data|
+        movies = movies_data.map do |movie_data|
             Movie.save_from_data(movie_data)
         end
+
+        render_movies(movies)
+    end
+
+     def render_movies(movies)
+        render json: {
+            movies: movies.map { |m| format_movie(m) },
+            count: movies.size,
+        }
+    end
+
+    def format_movie(movie)
+        {
+            id: movie.id,
+            tmdb_id: movie.tmdb_id,
+            title: movie.title,
+            release_date: movie.release_date,
+            overview: movie.overview,
+            poster_url: movie.poster_url,
+            popularity: movie.popularity
+        }
     end
 end
