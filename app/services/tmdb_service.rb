@@ -33,6 +33,8 @@ class TmdbService
         parse_results(parsed_response["results"])
     end
 
+    private
+
     def parse_results(results)
         results.map do |movie|
         {
