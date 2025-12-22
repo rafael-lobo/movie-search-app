@@ -1,7 +1,10 @@
 require 'uri'
 require 'net/http'
+require 'json'
 
 class TmdbService
+    class ApiError < StandardError; end
+
     def initialize
         @api_key = ENV["TMDB_API_KEY"]
         raise "API key not found" if @api_key.blank?
@@ -23,20 +26,26 @@ class TmdbService
 
         http = Net::HTTP.new(url.host, url.port)
         http.use_ssl = true
-        http.verify_mode = OpenSSL::SSL::VERIFY_NONE #* I'm bypassing OpenSSL's certificate verification for simplicity 
+        http.verify_mode = OpenSSL::SSL::VERIFY_NONE #* I'm bypassing OpenSSL's certificate verification for simplicity
 
         request = Net::HTTP::Get.new(url)
         request["accept"] = 'application/json'
 
-        response = http.request(request)
-        parsed_response = JSON.parse(response.read_body.force_encoding('UTF-8'))
-        parse_results(parsed_response["results"])
+        begin
+            response = http.request(request)
+            raise ApiError, "API request failed: #{response.code} #{response.message}" unless response.is_a?(Net::HTTPSuccess)
+
+            parsed_response = JSON.parse(response.body)
+            parse_results(parsed_response["results"])
+        rescue JSON::ParserError
+            raise ApiError, 'Invalid response from TMDB API'
+        end
     end
 
     private
 
     def parse_results(results)
-        results.map do |movie|
+    results.map do |movie|
         {
             :tmdb_id => movie["id"],
             :title => movie["original_title"],
@@ -45,6 +54,6 @@ class TmdbService
             :poster_path => movie["poster_path"],
             :release_date => movie["release_date"],
         }
-        end
+    end
     end
 end

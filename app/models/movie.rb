@@ -3,7 +3,7 @@ class Movie < ApplicationRecord
     validates :title, presence: true
 
     def self.save_from_data(movie_data)
-        find_or_create_by(tmdb_id: movie_data[:tmdb_id]) do |movie|
+        find_or_create_by!(tmdb_id: movie_data[:tmdb_id]) do |movie|
             movie.title = movie_data[:title]
             movie.release_date = movie_data[:release_date]
             movie.overview = movie_data[:overview]
