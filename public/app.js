@@ -51,6 +51,7 @@ function createMovieCard(movie) {
   const posterUrl = movie.poster_url || 'https://fireteller.com.au/wp-content/uploads/2020/09/Poster_Not_Available2.jpg';
   const overview = movie.overview || 'No description available.';
   const releaseDate = movie.release_date ? new Date(movie.release_date).toLocaleDateString() : 'Unknown';
+  const popularity = movie.popularity.toString() || 'Unknown';
   
   return `
     <div class="movie-card">
@@ -58,7 +59,8 @@ function createMovieCard(movie) {
       <div class="movie-info">
         <h3 class="movie-title">${movie.title}</h3>
         <p class="movie-date">📅 ${releaseDate}</p>
-        <p class="movie-overview">${truncate(overview, 200)}</p>
+        <p class="movie-popularity">📈 Popularity: ${popularity}</p>
+        <p class="movie-overview">${truncate(overview, 400)}</p>
       </div>
     </div>
   `;
