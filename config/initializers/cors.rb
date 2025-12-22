@@ -6,11 +6,11 @@
 # Read more: https://github.com/cyu/rack-cors
 
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
-  allow do
-    origins "*"
+    allow do
+        origins Rails.env.production? ? ENV['FRONTEND_URL'] : '*'
 
-    resource "*",
-      headers: :any,
-      methods: [:get, :post, :patch, :options]
-  end
+        resource "*",
+            headers: :any,
+            methods: [:get, :post, :options]
+    end
 end
