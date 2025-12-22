@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Movie Search by Date Range</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎬 Movie Search</h1>
+      <p>Find movies released within a date range</p>
+    </header>
+
+    <main>
+      <form id="searchForm" class="search-form">
+        <div class="form-group">
+          <label for="startDate">Start Date</label>
+          <input 
+            type="date" 
+            id="startDate" 
+            name="startDate" 
+            required>
+        </div>
+
+        <div class="form-group">
+          <label for="endDate">End Date</label>
+          <input 
+            type="date" 
+            id="endDate" 
+            name="endDate" 
+            required>
+        </div>
+
+        <button type="submit" class="btn-primary">Search Movies</button>
+      </form>
+
+      <div id="loading" class="loading" style="display: none;">
+        <div class="spinner"></div>
+        <p>Searching movies...</p>
+      </div>
+
+      <div id="error" class="error" style="display: none;"></div>
+
+      <div id="resultsInfo" class="results-info" style="display: none;"></div>
+
+      <div id="results" class="results-grid"></div>
+    </main>
+
+    <footer>
+      <p>Powered by <a href="https://www.themoviedb.org/" target="_blank">TMDb</a></p>
+    </footer>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
