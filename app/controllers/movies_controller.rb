@@ -1,5 +1,6 @@
 class MoviesController < ApplicationController
     before_action :validate_dates, only: [:search]
+    rescue_from TmdbService::ApiError, with: :tmdb_api_error
 
     def search
         fill_missing_date_ranges(@start_date, @end_date)
@@ -15,6 +16,10 @@ class MoviesController < ApplicationController
 
     private
 
+    def tmdb_api_error(error)
+        render json: { error: error.message }, status: :service_unavailable
+    end 
+
     def validate_dates
         @start_date = Date.parse(params[:start_date])
         @end_date = Date.parse(params[:end_date])
@@ -28,6 +33,7 @@ class MoviesController < ApplicationController
 
         return fetch_movies(start_date, end_date) if Movie.none?
 
+        # * fetch only the movies from the missing timeframes
         fetch_movies(start_date, earliest - 1.day) if start_date < earliest
         fetch_movies(latest + 1.day, end_date) if end_date > latest
     end
@@ -47,7 +53,7 @@ class MoviesController < ApplicationController
             end
         rescue StandardError => e
             Rails.logger.error "An unexpected error occurred in fetch_movies: #{e.message}"
-            raise
+            raise TmdbService::ApiError, e.message
         end
     end
 end
